@@ -13,7 +13,8 @@ if "opcion_seleccionada" not in st.session_state:
 
 
 def conectar(server, database, username, password, driver):
-    conn_str = f"DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}"
+    conn_str = f"DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password};TrustServerCertificate=yes"
+    # conn_str = f"DSN=MSSQLServerDatabase;SERVER={server};DATABASE={database};UID={username};PWD={password};TrustServerCertificate=yes"
     return pyodbc.connect(conn_str)
 
 
