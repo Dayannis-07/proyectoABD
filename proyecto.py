@@ -319,25 +319,13 @@ else:
 
         # CONSULTAS DE JESUS
         elif st.session_state.opcion_seleccionada == 6:
-            try:
-                show_query_tables([])
-            except Exception as e:
-                st.error(f"Error técnico: {e}")
+            show_query_tables([])
 
         elif st.session_state.opcion_seleccionada == 7:
-            try:
-                show_query_tables([])
-            except Exception as e:
-                st.error(f"Error técnico: {e}")
+            show_query_tables([])
 
         elif st.session_state.opcion_seleccionada == 8:
-            try:
-                show_query_tables([])
-            except Exception as e:
-                st.error(f"Error técnico: {e}")
+            show_query_tables([])
 
         elif st.session_state.opcion_seleccionada == 9:
-            try:
-                show_query_tables([])
-            except Exception as e:
-                st.error(f"Error técnico: {e}")
+            show_query_tables([])
