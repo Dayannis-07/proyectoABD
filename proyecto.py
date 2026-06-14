@@ -307,13 +307,146 @@ else:
 
         # CONSULTAS DE JESUS
         elif st.session_state.opcion_seleccionada == 6:
-            show_query_tables([])
+            show_query_tables(
+                (
+                    """
+SELECT
+    s.name AS Esquema,
+    t.name AS NombreTabla,
+    i.name AS NombreIndice,
+    ips.index_type_desc AS TipoIndice,
+    ips.alloc_unit_type_desc AS TipoUnidadAsignacion,
+    ips.avg_record_size_in_bytes AS TamañoPromedioFilaBytes,
+    ips.min_record_size_in_bytes AS TamañoMinimoFilaBytes,
+    ips.max_record_size_in_bytes AS TamañoMaximoFilaBytes,
+    ips.record_count AS TotalRegistros
+FROM
+    sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL, 'DETAILED') AS ips
+INNER JOIN
+    sys.tables AS t ON ips.object_id = t.object_id
+INNER JOIN
+    sys.schemas AS s ON t.schema_id = s.schema_id
+LEFT JOIN
+    sys.indexes AS i ON ips.object_id = i.object_id AND ips.index_id = i.index_id
+WHERE
+    ips.index_level = 0 -- Solo miramos el nivel hoja (donde residen los datos)
+    AND ips.alloc_unit_type_desc = 'IN_ROW_DATA' -- Ignora datos fuera de la fila como LOBs gigantes si solo quieres la fila estándar
+ORDER BY
+    TamañoPromedioFilaBytes DESC;
+            """,
+                    "Tamaño ocupado por cada registro",
+                )
+            )
 
         elif st.session_state.opcion_seleccionada == 7:
-            show_query_tables([])
+            show_query_tables(
+                (
+                    """
+SELECT
+    s.name AS Esquema,
+    tbl.name AS NombreTabla,
+    c.name AS NombreColumna,
+    t.name AS TipoDato,
+    CASE
+        WHEN c.max_length = -1 THEN 'Máximo (Hasta 2 GB)'
+        ELSE CAST(c.max_length AS VARCHAR(20))
+    END AS TamañoMaximoEnBytes
+FROM
+    sys.tables tbl
+INNER JOIN
+    sys.schemas s ON tbl.schema_id = s.schema_id
+INNER JOIN
+    sys.columns c ON tbl.object_id = c.object_id
+INNER JOIN
+    sys.types t ON c.user_type_id = t.user_type_id
+ORDER BY
+    Esquema,
+    NombreTabla,
+    c.column_id;
+                """,
+                    "Tamaño de cada columna en bytes",
+                )
+            )
 
         elif st.session_state.opcion_seleccionada == 8:
-            show_query_tables([])
+            show_query_tables(
+                (
+                    """
+SELECT
+    s.name AS Esquema,
+    t.name AS NombreTabla,
+    ISNULL(i.name, 'HEAP (Sin Índice)') AS NombreIndice,
+    ips.index_type_desc AS TipoEstructura,
+    ips.max_record_size_in_bytes AS TamañoRegistroFijoBytes,
+    CASE
+        WHEN ips.max_record_size_in_bytes = 0 THEN 0
+        ELSE CAST(FLOOR(8096.0 / ips.max_record_size_in_bytes) AS INT)
+    END AS FactorDeBloqueo_RegistrosPorPagina
+FROM
+    sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL, 'DETAILED') AS ips
+INNER JOIN
+    sys.tables AS t ON ips.object_id = t.object_id
+INNER JOIN
+    sys.schemas AS s ON t.schema_id = s.schema_id
+LEFT JOIN
+    sys.indexes AS i ON ips.object_id = i.object_id AND ips.index_id = i.index_id
+WHERE
+    ips.index_level = 0 -- Calculamos sobre el nivel hoja (los datos reales)
+    AND ips.alloc_unit_type_desc = 'IN_ROW_DATA' -- Solo datos estándar dentro de la página
+ORDER BY
+    Esquema,
+    NombreTabla,
+    TipoEstructura;
+                """,
+                    "Factor de bloqueo de las tablas e índices",
+                )
+            )
 
         elif st.session_state.opcion_seleccionada == 9:
-            show_query_tables([])
+            st.write(
+                "Asumiendo que las lecturas a disco tardan 1ms (asumimos que es un ssd)."
+            )
+            show_query_tables(
+                (
+                    """
+SELECT
+    s.name AS Esquema,
+    t.name AS NombreTabla,
+    c.name AS NombreColumna,
+    i.name AS NombreIndice,
+    i.type_desc AS TipoIndice,
+    i.is_unique AS EsUnico,
+    ips.index_depth AS ProfundidadArbolB,
+    -- Accesos lógicos: Bajar desde la raíz hasta la hoja
+    ips.index_depth AS AccesosLogicosEstimados,
+    -- Tiempo estimado: Accesos * Tiempo por acceso
+    (ips.index_depth * 1) AS TiempoEstimadoMs,
+    CASE
+        WHEN ic.key_ordinal = 1 THEN 'ÓPTIMO (Columna principal)'
+        ELSE 'SUBÓPTIMO (Columna secundaria)'
+    END AS UtilidadParaIgualdad
+FROM
+    sys.tables t
+INNER JOIN
+    sys.schemas s ON t.schema_id = s.schema_id
+INNER JOIN
+    sys.indexes i ON t.object_id = i.object_id
+INNER JOIN
+    sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+INNER JOIN
+    sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+CROSS APPLY
+    -- LIMITED lee solo las páginas principales (raíz/intermedias), es el más ligero
+    sys.dm_db_index_physical_stats(DB_ID(), t.object_id, i.index_id, NULL, 'LIMITED') ips
+WHERE
+    i.is_disabled = 0
+    AND i.type > 0 -- Ignoramos HEAPs (Tablas sin índices estructurados en árbol B)
+ORDER BY
+    Esquema,
+    NombreTabla,
+    i.name,
+    ic.key_ordinal ASC;
+                        """,
+                    "Análisis de costo de consulta",
+                )
+            )
