@@ -167,11 +167,9 @@ else:
                 )
                 cursor = conn.cursor()
 
-                
-
                 mostrar_tabla_con_encabezados(
-                cursor,
-                 """
+                    cursor,
+                    """
                 SELECT
                     s.name AS Esquema,
                     t.name AS Tabla,
@@ -195,7 +193,8 @@ else:
                     TipoRestriccion,
                     c.name
                 """,
-                "Restricciones del esquema",)
+                    "Restricciones del esquema",
+                )
 
                 conn.close()
             except Exception as e:
@@ -213,10 +212,9 @@ else:
                 )
                 cursor = conn.cursor()
 
-
                 mostrar_tabla_con_encabezados(
-                cursor,
-                """
+                    cursor,
+                    """
                 SELECT
                 t.name AS Tabla,
                 COUNT(i.index_id) AS CantidadIndices
@@ -230,10 +228,8 @@ else:
                 GROUP BY t.name
                 ORDER BY CantidadIndices DESC, t.name
                 """,
-                "Cantidad de Índices por Tabla",
+                    "Cantidad de Índices por Tabla",
                 )
-
-                
 
                 mostrar_tabla_con_encabezados(
                     cursor,
@@ -288,7 +284,6 @@ else:
                     "Detalle Índices del Esquema",
                 )
 
-
                 conn.close()
             except Exception as e:
                 st.error(f"Error técnico: {e}")
@@ -304,8 +299,6 @@ else:
                     creds["driver"],
                 )
                 cursor = conn.cursor()
-
-                
 
                 mostrar_tabla_con_encabezados(
                     cursor,
@@ -332,8 +325,6 @@ else:
                     "Info Triggers del Esquema",
                 )
 
-
-
                 conn.close()
             except Exception as e:
                 st.error(f"Error técnico: {e}")
@@ -349,7 +340,7 @@ else:
                     creds["driver"],
                 )
                 cursor = conn.cursor()
-                
+
                 mostrar_tabla_con_encabezados(
                     cursor,
                     """
@@ -374,7 +365,6 @@ else:
                     """,
                     "Tamaño ocupado por cada tabla",
                 )
-
 
                 conn.close()
             except Exception as e:
