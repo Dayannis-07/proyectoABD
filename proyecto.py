@@ -29,7 +29,7 @@ def mostrar_tabla_con_encabezados(cursor, query, titulo):
     st.table([columnas] + [list(fila) for fila in datos])
 
 
-def show_query_tables(queries):
+def show_query_tables(*args):
     creds = st.session_state.credenciales
     try:
         conn = conectar(
@@ -41,7 +41,7 @@ def show_query_tables(queries):
         )
         cursor = conn.cursor()
 
-        for query in queries:
+        for query in args:
             mostrar_tabla_con_encabezados(
                 cursor,
                 query[0],
@@ -123,40 +123,35 @@ else:
         if st.session_state.opcion_seleccionada == 0:
             try:
                 show_query_tables(
-                    [
-                        (
-                            "SELECT TABLE_SCHEMA AS Esquema, TABLE_NAME AS Tabla FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'",
-                            "Tablas de la Base de Datos",
-                        ),
-                        (
-                            "SELECT t.name AS Tabla, i.name AS Indice, i.type_desc AS TipoIndice FROM sys.indexes AS i INNER JOIN sys.tables AS t ON i.object_id = t.object_id WHERE i.name IS NOT NULL ORDER BY Tabla, Indice;",
-                            "Índices de la Base de Datos",
-                        ),
-                    ]
+                    (
+                        "SELECT TABLE_SCHEMA AS Esquema, TABLE_NAME AS Tabla FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'",
+                        "Tablas de la Base de Datos",
+                    ),
+                    (
+                        "SELECT t.name AS Tabla, i.name AS Indice, i.type_desc AS TipoIndice FROM sys.indexes AS i INNER JOIN sys.tables AS t ON i.object_id = t.object_id WHERE i.name IS NOT NULL ORDER BY Tabla, Indice;",
+                        "Índices de la Base de Datos",
+                    ),
                 )
             except Exception as e:
                 st.error(f"Error técnico: {e}")
 
         elif st.session_state.opcion_seleccionada == 1:
             show_query_tables(
-                [
-                    (
-                        "SELECT COUNT(*) AS Total FROM sys.tables",
-                        "Cantidad de Tablas en la Base de Datos",
-                    ),
-                    (
-                        """SELECT t.name AS Tabla, COUNT(i.index_id) AS CantidadIndices FROM sys.tables t LEFT JOIN sys.indexes i ON t.object_id = i.object_id AND i.name IS NOT NULL GROUP BY t.name ORDER BY CantidadIndices DESC""",
-                        "Cantidad de Índices definidos por Tabla",
-                    ),
-                ]
+                (
+                    "SELECT COUNT(*) AS Total FROM sys.tables",
+                    "Cantidad de Tablas en la Base de Datos",
+                ),
+                (
+                    """SELECT t.name AS Tabla, COUNT(i.index_id) AS CantidadIndices FROM sys.tables t LEFT JOIN sys.indexes i ON t.object_id = i.object_id AND i.name IS NOT NULL GROUP BY t.name ORDER BY CantidadIndices DESC""",
+                    "Cantidad de Índices definidos por Tabla",
+                ),
             )
 
         # CONSULTAS DE GENESIS
         elif st.session_state.opcion_seleccionada == 2:
             show_query_tables(
-                [
-                    (
-                        """
+                (
+                    """
             SELECT
                 s.name AS Esquema,
                 t.name AS Tabla,
@@ -180,16 +175,14 @@ else:
                 TipoRestriccion,
                 c.name
             """,
-                        "Restricciones del esquema",
-                    ),
-                ]
+                    "Restricciones del esquema",
+                ),
             )
 
         elif st.session_state.opcion_seleccionada == 3:
             show_query_tables(
-                [
-                    (
-                        """
+                (
+                    """
             SELECT
             t.name AS Tabla,
             COUNT(i.index_id) AS CantidadIndices
@@ -203,10 +196,10 @@ else:
             GROUP BY t.name
             ORDER BY CantidadIndices DESC, t.name
             """,
-                        "Cantidad de Índices por Tabla",
-                    ),
-                    (
-                        """
+                    "Cantidad de Índices por Tabla",
+                ),
+                (
+                    """
                 SELECT
                     t.name AS Tabla,
                     i.name AS NombreIndice,
@@ -254,16 +247,14 @@ else:
                     t.name,
                     i.name
                 """,
-                        "Detalle Índices del Esquema",
-                    ),
-                ]
+                    "Detalle Índices del Esquema",
+                ),
             )
 
         elif st.session_state.opcion_seleccionada == 4:
             show_query_tables(
-                [
-                    (
-                        """
+                (
+                    """
                 SELECT
                     tr.name AS NombreTrigger,
                     tb.name AS Tabla,
@@ -283,16 +274,14 @@ else:
                 WHERE s.name = 'streaming'
                 ORDER BY tb.name, tr.name
                 """,
-                        "Info Triggers del Esquema",
-                    ),
-                ]
+                    "Info Triggers del Esquema",
+                ),
             )
 
         elif st.session_state.opcion_seleccionada == 5:
             show_query_tables(
-                [
-                    (
-                        """
+                (
+                    """
                 SELECT
                     t.name AS Tabla,
                     SUM(p.rows) AS Filas,
@@ -312,9 +301,8 @@ else:
                 GROUP BY t.name
                 ORDER BY TamañoKB DESC
                 """,
-                        "Tamaño ocupado por cada tabla",
-                    )
-                ]
+                    "Tamaño ocupado por cada tabla",
+                )
             )
 
         # CONSULTAS DE JESUS
